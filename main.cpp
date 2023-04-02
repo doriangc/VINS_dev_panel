@@ -29,6 +29,27 @@ int main(int, char**)
     GLFWwindow* window = glfwCreateWindow(1280, 720, "ImGui OpenGL3 example", NULL, NULL);
     glfwMakeContextCurrent(window);
 
+    const GLubyte *renderer = glGetString( GL_RENDERER );
+    const GLubyte *vendor = glGetString( GL_VENDOR );
+    const GLubyte *version = glGetString( GL_VERSION );
+    const GLubyte *glslVersion = glGetString( GL_SHADING_LANGUAGE_VERSION );
+
+    GLint major, minor, samples, sampleBuffers;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+	glGetIntegerv(GL_SAMPLES, &samples);
+	glGetIntegerv(GL_SAMPLE_BUFFERS, &sampleBuffers);
+	
+	printf("-------------------------------------------------------------\n");
+    printf("GL Vendor    : %s\n", vendor);
+    printf("GL Renderer  : %s\n", renderer);
+    printf("GL Version   : %s\n", version);
+    printf("GL Version   : %d.%d\n", major, minor);
+    printf("GLSL Version : %s\n", glslVersion);
+	printf("MSAA samples : %d\n", samples);
+	printf("MSAA buffers : %d\n", sampleBuffers);
+    printf("-------------------------------------------------------------\n");
+
     glewInit();
 
     // Setup ImGui binding
@@ -53,11 +74,24 @@ int main(int, char**)
     {
         ImGui_ImplGlfwGL3_NewFrame();
 
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Controls")) {
+                ImGui::MenuItem("Play/Pause");
+                ImGui::MenuItem("Next Frame");
+                ImGui::MenuItem("Previous Frame");
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+
+
         // 1. Show a simple window
         // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
         {
             static float f = 0.0f;
             ImGui::Text("Hello, world!");
+            // ImGui::ImageButton();
+            // ImGui::Image();
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
             ImGui::ColorEdit3("clear color", (float*)&clear_color);
             if (ImGui::Button("Test Window")) show_test_window ^= 1;
@@ -66,20 +100,17 @@ int main(int, char**)
         }
 
         // 2. Show another simple window, this time using an explicit Begin/End pair
-        if (show_another_window)
-        {
-            ImGui::SetNextWindowSize(ImVec2(200,100), ImGuiSetCond_FirstUseEver);
-            ImGui::Begin("Another Window", &show_another_window);
-            ImGui::Text("Hello");
-            ImGui::End();
-        }
+        ImGui::SetNextWindowSize(ImVec2(200,100), ImGuiSetCond_FirstUseEver);
+        ImGui::Begin("Another Window", &show_another_window);
+        ImGui::Text("Hello");
+        ImGui::End();
 
         // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-        if (show_test_window)
-        {
-            ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-            ImGui::ShowTestWindow(&show_test_window);
-        }
+        // if (show_test_window)
+        // {
+        //     ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+        //     ImGui::ShowTestWindow(&show_test_window);
+        // }
 
         // Rendering
         int display_w, display_h;
@@ -87,6 +118,7 @@ int main(int, char**)
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
+
         ImGui::Render();
 
         glfwSwapBuffers(window);

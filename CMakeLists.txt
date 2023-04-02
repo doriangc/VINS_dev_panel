@@ -7,7 +7,7 @@ set(CMAKE_VERBOSE_MAKEFILE 1)
 set(APP_VERSION_MAJOR 1)
 set(APP_VERSION_MINOR 0)
 
-set(APP_TARGET imgui-demo.app)
+set(APP_TARGET dev_panel)
 
 add_subdirectory(imgui)
 include_directories(${PROJECT_SOURCE_DIR})
