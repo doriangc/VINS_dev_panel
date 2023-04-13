@@ -11,7 +11,7 @@ set(APP_TARGET dev_panel)
 
 add_subdirectory(imgui)
 include_directories(${PROJECT_SOURCE_DIR})
-add_executable(${APP_TARGET} main.cpp)
+add_executable(${APP_TARGET} main.cpp binder/ViewController.cpp)
 target_link_libraries(${APP_TARGET} imgui)
 
 # glfw
@@ -20,12 +20,15 @@ include_directories(${GLFW_INCLUDE_DIRS})
 link_libraries(${GLFW_LIBRARY_DIRS})
 
 # opengl
+set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
 
 # glew
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
+
+add_subdirectory(VINS-Mobile-master)
 
 if (APPLE)
     find_library(COCOA_LIBRARY Cocoa)
@@ -41,6 +44,8 @@ endif (WIN32)
 
 target_link_libraries(
         ${APP_TARGET}
+        VINSMobile
+        VINS_Android
         glfw
         ${OPENGL_LIBRARIES}
         ${GLEW_LIBRARIES}

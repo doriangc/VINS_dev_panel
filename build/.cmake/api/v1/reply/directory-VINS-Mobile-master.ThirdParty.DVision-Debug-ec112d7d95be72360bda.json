@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "VINS-Mobile-master/ThirdParty/DVision",
+		"source" : "VINS-Mobile-master/ThirdParty/DVision"
+	}
+}

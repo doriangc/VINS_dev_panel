@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "VINS-Mobile-master/VINS_ios",
+		"source" : "VINS-Mobile-master/VINS_ios"
+	}
+}
