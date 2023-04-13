@@ -1,6 +1,6 @@
 [submodule "imgui"]
 	path = imgui
-	url = git@github.com:ocornut/imgui.git
+	url = git@github.com:doriangc/imgui_vins.git
 [submodule "VINS-Mono"]
 	path = VINS-Mono
 	url = git@github.com:doriangc/VINS-Mono.git
