@@ -11,7 +11,7 @@ set(APP_TARGET dev_panel)
 
 add_subdirectory(imgui)
 include_directories(${PROJECT_SOURCE_DIR})
-add_executable(${APP_TARGET} main.cpp binder/ViewController.cpp)
+add_executable(${APP_TARGET} main.cpp binder/ViewController.cpp imgui/backends/imgui_impl_sdl2.cpp imgui/backends/imgui_impl_opengl3.cpp)
 target_link_libraries(${APP_TARGET} imgui)
 
 # glfw
@@ -28,7 +28,13 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 
-add_subdirectory(VINS-Mobile-master)
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+
+include_directories(imgui/)
+
+add_subdirectory(VINS-Mobile)
+set(CMAKE_CXX_FLAGS "-fopenmp -D_REENTRANT")
 
 if (APPLE)
     find_library(COCOA_LIBRARY Cocoa)
@@ -45,9 +51,11 @@ endif (WIN32)
 target_link_libraries(
         ${APP_TARGET}
         VINSMobile
-        VINS_Android
+        # VINS_Android
         glfw
+        GL
         ${OPENGL_LIBRARIES}
         ${GLEW_LIBRARIES}
+        ${SDL2_LIBRARIES}
         ${EXTRA_LIBS}
 )

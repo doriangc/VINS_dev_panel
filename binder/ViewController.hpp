@@ -13,22 +13,22 @@
 
 #include <iostream>
 
-#import "utility.hpp"
+#include "utility.hpp"
 // iOS Specific OpenCV Parts
 // #import "CameraUtils.h" (another Objective C header)
 // #import <opencv2/imgcodecs/ios.h>
 // #import <opencv2/videoio/cap_ios.h>
-#import "feature_tracker.hpp"
+#include "feature_tracker.hpp"
 
-#import "global_param.hpp"
-#import "VINS.hpp"
+#include "global_param.hpp"
+#include "VINS.hpp"
 #include <queue>
-#import "draw_result.hpp"
+#include "draw_result.hpp"
 
 #include "keyframe.h"
 #include "loop_closure.h"
 #include "keyfame_database.h"
-#import <sys/utsname.h>
+#include <sys/utsname.h>
 
 // added in the continous process of tranlating objective c code
 #include <condition_variable> // std::condition_variable con
@@ -43,8 +43,8 @@ typedef double NSTimeInterval;
 #include <thread>
 // #include <jni.h>
 
-#define LOGI(...) printf(__VA_ARGS__)
-#define LOGE(...) printf(__VA_ARGS__)
+#define LOGI(...) printf(__VA_ARGS__); printf("\n")
+#define LOGE(...) printf(__VA_ARGS__); printf("\n")
 #define __android_log_print(prio, tag, fmt, ...) printf(fmt, ##__VA_ARGS__)
 
 
@@ -174,7 +174,7 @@ private:
     queue<ImuConstPtr> imu_msg_buf;
 
     // Store the IMU data for motion-only vins
-    queue<IMUMsgLocal> local_imu_msg_buf;
+    // queue<IMUMsgLocal> local_imu_msg_buf;
 
     // The number of measurements waiting to be processed
     int waiting_lists = 0;
@@ -204,8 +204,8 @@ private:
     const int SENSOR_REFRESH_RATE_HZ = 100;
     const int32_t SENSOR_REFRESH_PERIOD_US = int32_t(1000000 / SENSOR_REFRESH_RATE_HZ);
 
-    static ASensorEventQueue *accelerometerEventQueue;
-    static ASensorEventQueue *gyroscopeEventQueue;
+    // static ASensorEventQueue *accelerometerEventQueue;
+    // static ASensorEventQueue *gyroscopeEventQueue;
 
     static int process_imu_looper_events(int fd, int events, void* data);
     static int process_imu_sensor_events(int fd, int events, void* data);
@@ -227,7 +227,7 @@ private:
     std::mutex m_imu_feedback_mutex;
 
     // Solved VINS feature feedback to featuretracker
-    list<ImageFeature> solved_features;
+    list<IMG_MSG_LOCAL> solved_features;
 
     // Solved VINS status feedback to featuretracker
     VINS_RESULT solved_vins;
@@ -335,7 +335,7 @@ public:
      * Used for feature tracking, returns and removes all imu_msg from the local imu buffer
      * that are in between the last and the current header (timeStamp)
      */
-    vector<IMUMsgLocal> getImuMeasurements(double header);
+    // vector<IMUMsgLocal> getImuMeasurements(double header);
 
     void send_imu(const ImuConstPtr &imu_msg);
 

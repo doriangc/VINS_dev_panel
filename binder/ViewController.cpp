@@ -2,8 +2,10 @@
 #include "ViewController.hpp"
 
 ViewController* ViewController::instance = nullptr;
-ASensorEventQueue* ViewController::accelerometerEventQueue = nullptr;
-ASensorEventQueue* ViewController::gyroscopeEventQueue = nullptr;
+// ASensorEventQueue* ViewController::accelerometerEventQueue = nullptr;
+// ASensorEventQueue* ViewController::gyroscopeEventQueue = nullptr;
+
+bool DETECT_LOOP_CLOSURES = true;
 
 ViewController::ViewController() {
     LOGI("ViewController Constructor");
@@ -101,7 +103,7 @@ void ViewController::processImage(cv::Mat &image, double timestamp, bool isScree
 
         m_imu_feedback_mutex.lock();
         // Get all IMU measurements between last frame and this frame.
-        featuretracker.imu_msgs = getImuMeasurements(img_metadata->timestamp);
+        // featuretracker.imu_msgs = getImuMeasurements(img_metadata->timestamp);
         m_imu_feedback_mutex.unlock();
 
         if (this->saveDir.length() > 0) {
@@ -338,27 +340,27 @@ std::vector<std::pair<std::vector<ImuConstPtr>, ImgConstPtr>> ViewController::ge
     return measurements;
 }
 
-vector<IMUMsgLocal> ViewController::getImuMeasurements(double header) {
-    vector<IMUMsgLocal> imu_measurements;
-    static double last_header = -1; // STATIC only happens once
-    if (last_header < 0 || local_imu_msg_buf.empty())
-    {
-        last_header = header;
-        return imu_measurements;
-    }
+// vector<IMUMsgLocal> ViewController::getImuMeasurements(double header) {
+//     vector<IMUMsgLocal> imu_measurements;
+//     static double last_header = -1; // STATIC only happens once
+//     if (last_header < 0 || local_imu_msg_buf.empty())
+//     {
+//         last_header = header;
+//         return imu_measurements;
+//     }
 
-    while (!local_imu_msg_buf.empty() && local_imu_msg_buf.front().timestamp <= last_header)
-        local_imu_msg_buf.pop();
+//     while (!local_imu_msg_buf.empty() && local_imu_msg_buf.front().timestamp <= last_header)
+//         local_imu_msg_buf.pop();
 
-    while (!local_imu_msg_buf.empty() && local_imu_msg_buf.front().timestamp <= header)
-    {
-        imu_measurements.emplace_back(local_imu_msg_buf.front());
-        local_imu_msg_buf.pop();
-    }
+//     while (!local_imu_msg_buf.empty() && local_imu_msg_buf.front().timestamp <= header)
+//     {
+//         imu_measurements.emplace_back(local_imu_msg_buf.front());
+//         local_imu_msg_buf.pop();
+//     }
 
-    last_header = header;
-    return imu_measurements;
-}
+//     last_header = header;
+//     return imu_measurements;
+// }
 
 void ViewController::send_imu(const ImuConstPtr &imu_msg) {
     NSTimeInterval t = imu_msg->header;
@@ -450,7 +452,7 @@ void ViewController::process() {
                 int imu_i = it_per_id.start_frame;
                 Vector3d pts_i = it_per_id.feature_per_frame[0].point * it_per_id.estimated_depth;
 
-                ImageFeature tmp_feature;
+                IMG_MSG_LOCAL tmp_feature;
                 tmp_feature.id = it_per_id.feature_id;
                 tmp_feature.position = vins.r_drift * vins.Rs[imu_i] * (vins.ric * pts_i + vins.tic) + vins.r_drift * vins.Ps[imu_i] + vins.t_drift;
                 tmp_feature.track_num = (int)it_per_id.feature_per_frame.size();
@@ -697,55 +699,55 @@ void ViewController::globalPoseGraphLoop() {
 
 void ViewController::imuStopUpdate() {
 
-    ASensorManager *sensorManager = ASensorManager_getInstance();
-    assert(sensorManager != NULL);
-    const ASensor *accelerometer = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_ACCELEROMETER);
-    const ASensor *gyroscope = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_GYROSCOPE);
+    // ASensorManager *sensorManager = ASensorManager_getInstance();
+    // assert(sensorManager != NULL);
+    // const ASensor *accelerometer = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_ACCELEROMETER);
+    // const ASensor *gyroscope = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_GYROSCOPE);
     
-    ASensorEventQueue_disableSensor(accelerometerEventQueue, accelerometer);
-    ASensorEventQueue_disableSensor(gyroscopeEventQueue, gyroscope);
+    // ASensorEventQueue_disableSensor(accelerometerEventQueue, accelerometer);
+    // ASensorEventQueue_disableSensor(gyroscopeEventQueue, gyroscope);
 }
 
 void ViewController::imuStartUpdate() const {
 
-    ASensorManager *sensorManager = ASensorManager_getInstance();
-    assert(sensorManager != NULL);
+    // ASensorManager *sensorManager = ASensorManager_getInstance();
+    // assert(sensorManager != NULL);
 
-    ALooper* looper = ALooper_forThread();
-    if(looper == NULL)
-        looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
-    assert(looper != NULL);
+    // ALooper* looper = ALooper_forThread();
+    // if(looper == NULL)
+    //     looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
+    // assert(looper != NULL);
 
-    accelerometerEventQueue = ASensorManager_createEventQueue(sensorManager, looper,
-                                                              LOOPER_ID_USER, process_imu_looper_events,
-                                                              NULL);
+    // accelerometerEventQueue = ASensorManager_createEventQueue(sensorManager, looper,
+    //                                                           LOOPER_ID_USER, process_imu_looper_events,
+    //                                                           NULL);
 
-    assert(accelerometerEventQueue != NULL);
-    const ASensor *accelerometer = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_ACCELEROMETER);
-    assert(accelerometer != NULL);
-    auto status = ASensorEventQueue_enableSensor(accelerometerEventQueue,
-                                                 accelerometer);
-    assert(status >= 0);
-    status = ASensorEventQueue_setEventRate(accelerometerEventQueue,
-                                            accelerometer,
-                                            SENSOR_REFRESH_PERIOD_US);
-    assert(status >= 0);
+    // assert(accelerometerEventQueue != NULL);
+    // const ASensor *accelerometer = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_ACCELEROMETER);
+    // assert(accelerometer != NULL);
+    // auto status = ASensorEventQueue_enableSensor(accelerometerEventQueue,
+    //                                              accelerometer);
+    // assert(status >= 0);
+    // status = ASensorEventQueue_setEventRate(accelerometerEventQueue,
+    //                                         accelerometer,
+    //                                         SENSOR_REFRESH_PERIOD_US);
+    // assert(status >= 0);
 
-    gyroscopeEventQueue = ASensorManager_createEventQueue(sensorManager, looper,
-                                                          LOOPER_ID_USER, process_imu_sensor_events,
-                                                          NULL);
-    assert(gyroscopeEventQueue != NULL);
-    const ASensor *gyroscope = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_GYROSCOPE);
-    assert(gyroscope != NULL);
-    status = ASensorEventQueue_enableSensor(gyroscopeEventQueue,
-                                            gyroscope);
-    assert(status >= 0);
-    status = ASensorEventQueue_setEventRate(gyroscopeEventQueue,
-                                            gyroscope,
-                                            SENSOR_REFRESH_PERIOD_US);
-    assert(status >= 0);
+    // gyroscopeEventQueue = ASensorManager_createEventQueue(sensorManager, looper,
+    //                                                       LOOPER_ID_USER, process_imu_sensor_events,
+    //                                                       NULL);
+    // assert(gyroscopeEventQueue != NULL);
+    // const ASensor *gyroscope = ASensorManager_getDefaultSensor(sensorManager, ASENSOR_TYPE_GYROSCOPE);
+    // assert(gyroscope != NULL);
+    // status = ASensorEventQueue_enableSensor(gyroscopeEventQueue,
+    //                                         gyroscope);
+    // assert(status >= 0);
+    // status = ASensorEventQueue_setEventRate(gyroscopeEventQueue,
+    //                                         gyroscope,
+    //                                         SENSOR_REFRESH_PERIOD_US);
+    // assert(status >= 0);
 
-    LOGI("IMU EventQueues initialized and started");
+    // LOGI("IMU EventQueues initialized and started");
 }
 
 /*
@@ -758,127 +760,127 @@ int ViewController::process_imu_looper_events(int fd, int events, void *data) {
 }
 
 int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
-    static ASensorEvent accelEvent;
-    static double accelEventTimestamp = -1.0;
-    ASensorEvent gyroEvent;
+//     static ASensorEvent accelEvent;
+//     static double accelEventTimestamp = -1.0;
+//     ASensorEvent gyroEvent;
     
-    while (ASensorEventQueue_getEvents(gyroscopeEventQueue, &gyroEvent, 1) > 0) {
-        assert(gyroEvent.type == ASENSOR_TYPE_GYROSCOPE);
+//     while (ASensorEventQueue_getEvents(gyroscopeEventQueue, &gyroEvent, 1) > 0) {
+//         assert(gyroEvent.type == ASENSOR_TYPE_GYROSCOPE);
 
 
-        double timeStampGyro = timeStampToSec(gyroEvent.timestamp);
-        // The timestamp is the amount of time in seconds since the device booted.
-        assert(timeStampGyro > 0);
+//         double timeStampGyro = timeStampToSec(gyroEvent.timestamp);
+//         // The timestamp is the amount of time in seconds since the device booted.
+//         assert(timeStampGyro > 0);
 
-        IMUMessage gyro_msg;
-        gyro_msg.header = timeStampGyro;
-        // in iOS and in Android the unit is rad/s
-        gyro_msg.gyr << gyroEvent.uncalibrated_gyro.x_uncalib, //latestGyro.rotationRate.x,
-                        gyroEvent.uncalibrated_gyro.y_uncalib, //latestGyro.rotationRate.y,
-                        gyroEvent.uncalibrated_gyro.z_uncalib; //latestGyro.rotationRate.z;
+//         IMUMessage gyro_msg;
+//         gyro_msg.header = timeStampGyro;
+//         // in iOS and in Android the unit is rad/s
+//         gyro_msg.gyr << gyroEvent.uncalibrated_gyro.x_uncalib, //latestGyro.rotationRate.x,
+//                         gyroEvent.uncalibrated_gyro.y_uncalib, //latestGyro.rotationRate.y,
+//                         gyroEvent.uncalibrated_gyro.z_uncalib; //latestGyro.rotationRate.z;
 
 
                 
-        if (instance->gyro_buf.empty()) {
-            LOGI("gyro interpolation buffer empty. should only happen once.");
-            instance->gyro_buf.push_back(gyro_msg);
-            instance->gyro_buf.push_back(gyro_msg);
-            continue;
-        }
-        else if (gyro_msg.header <= instance->gyro_buf[1].header) {
-            // Apparently events can be fired twice
-            // Drop this event as it isn't more recent than the last one
-            continue;
-        }
-        else {
-            instance->gyro_buf[0] = instance->gyro_buf[1];
-            instance->gyro_buf[1] = gyro_msg;
-        }
+//         if (instance->gyro_buf.empty()) {
+//             LOGI("gyro interpolation buffer empty. should only happen once.");
+//             instance->gyro_buf.push_back(gyro_msg);
+//             instance->gyro_buf.push_back(gyro_msg);
+//             continue;
+//         }
+//         else if (gyro_msg.header <= instance->gyro_buf[1].header) {
+//             // Apparently events can be fired twice
+//             // Drop this event as it isn't more recent than the last one
+//             continue;
+//         }
+//         else {
+//             instance->gyro_buf[0] = instance->gyro_buf[1];
+//             instance->gyro_buf[1] = gyro_msg;
+//         }
         
-        if(instance->imu_prepare < 10) {
-            instance->imu_prepare++;
-            continue;
-        }
+//         if(instance->imu_prepare < 10) {
+//             instance->imu_prepare++;
+//             continue;
+//         }
         
-        while (accelEventTimestamp < instance->gyro_buf[0].header) {
-//            LOGI("accelEventTimestamp < gyroEvent.timestamp: %lf < %lf", accelEventTimestamp , instance->gyro_buf[0].header);
-            ssize_t numEvents;
-            while((numEvents = ASensorEventQueue_getEvents(accelerometerEventQueue, &accelEvent, 1)) == 0) {
-//                LOGI("having to wait for accl event");
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
-            assert(numEvents == 1);
-            assert(accelEvent.type == ASENSOR_TYPE_ACCELEROMETER);
+//         while (accelEventTimestamp < instance->gyro_buf[0].header) {
+// //            LOGI("accelEventTimestamp < gyroEvent.timestamp: %lf < %lf", accelEventTimestamp , instance->gyro_buf[0].header);
+//             ssize_t numEvents;
+//             while((numEvents = ASensorEventQueue_getEvents(accelerometerEventQueue, &accelEvent, 1)) == 0) {
+// //                LOGI("having to wait for accl event");
+//                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
+//             }
+//             assert(numEvents == 1);
+//             assert(accelEvent.type == ASENSOR_TYPE_ACCELEROMETER);
 
-            accelEventTimestamp = timeStampToSec(accelEvent.timestamp);
+//             accelEventTimestamp = timeStampToSec(accelEvent.timestamp);
             
-//            LOGI("IMU accl event timeStamp: %lf", timeStampAccl);
-            shared_ptr<IMUMessage> acc_msg(new IMUMessage());
-            acc_msg->header = accelEventTimestamp;
-            // TODO: Apply a matrix multiplication to enable use of different coordinate systems
-            // in Android the unit is m/s^2 in iOS it is g (9.8m/s^2)
-            acc_msg->acc << accelEvent.acceleration.x,
-                            accelEvent.acceleration.y,
-                            accelEvent.acceleration.z;
-            instance->cur_acc = acc_msg;
-        }
-//        LOGI("waited for accl event: %lf >= %lf", accelEventTimestamp, instance->gyro_buf[0].header);
-        if(instance->gyro_buf[1].header < accelEventTimestamp){
-            LOGE("having to wait for fitting gyro event"); // This should not happen if the frequency is the same
-            continue;
-        }
+// //            LOGI("IMU accl event timeStamp: %lf", timeStampAccl);
+//             shared_ptr<IMUMessage> acc_msg(new IMUMessage());
+//             acc_msg->header = accelEventTimestamp;
+//             // TODO: Apply a matrix multiplication to enable use of different coordinate systems
+//             // in Android the unit is m/s^2 in iOS it is g (9.8m/s^2)
+//             acc_msg->acc << accelEvent.acceleration.x,
+//                             accelEvent.acceleration.y,
+//                             accelEvent.acceleration.z;
+//             instance->cur_acc = acc_msg;
+//         }
+// //        LOGI("waited for accl event: %lf >= %lf", accelEventTimestamp, instance->gyro_buf[0].header);
+//         if(instance->gyro_buf[1].header < accelEventTimestamp){
+//             LOGE("having to wait for fitting gyro event"); // This should not happen if the frequency is the same
+//             continue;
+//         }
 
 
-        //interpolation
-        shared_ptr<IMUMessage> imu_msg(new IMUMessage());
-//        LOGI("instance->cur_acc->header: \t\t%lf \ninstance->gyro_buf[0].header: \t%lf \ninstance->gyro_buf[1].header: \t%lf", instance->cur_acc->header, instance->gyro_buf[0].header, instance->gyro_buf[1].header);
-        // TODO: Revert back to < not <=
-        // This may be fixed when using the correct parameters for the phone
-        if(instance->cur_acc->header >= instance->gyro_buf[0].header &&
-        instance->cur_acc->header <= instance->gyro_buf[1].header) {
-            imu_msg->header = instance->cur_acc->header;
-//            imu_msg->header = (double)cv::getTickCount() / cv::getTickFrequency();
-            imu_msg->acc = instance->cur_acc->acc;
-            imu_msg->gyr = instance->gyro_buf[0].gyr +
-                           (instance->gyro_buf[1].gyr - instance->gyro_buf[0].gyr) *
-                           (instance->cur_acc->header - instance->gyro_buf[0].header) /
-                           (instance->gyro_buf[1].header - instance->gyro_buf[0].header);
-            //printf("imu gyro update %lf %lf %lf\n", instance.gyro_buf[0].header, imu_msg->header, instance.gyro_buf[1].header);
-            //printf("imu inte update %lf %lf %lf %lf\n", imu_msg->header, instance.gyro_buf[0].gyr.x(), imu_msg->gyr.x(), instance.gyro_buf[1].gyr.x());
-        }
-        else {
-            LOGE("imu error %lf %lf %lf\n", instance->gyro_buf[0].header, instance->cur_acc->header, instance->gyro_buf[1].header);
-            continue;
-        }
+//         //interpolation
+//         shared_ptr<IMUMessage> imu_msg(new IMUMessage());
+// //        LOGI("instance->cur_acc->header: \t\t%lf \ninstance->gyro_buf[0].header: \t%lf \ninstance->gyro_buf[1].header: \t%lf", instance->cur_acc->header, instance->gyro_buf[0].header, instance->gyro_buf[1].header);
+//         // TODO: Revert back to < not <=
+//         // This may be fixed when using the correct parameters for the phone
+//         if(instance->cur_acc->header >= instance->gyro_buf[0].header &&
+//         instance->cur_acc->header <= instance->gyro_buf[1].header) {
+//             imu_msg->header = instance->cur_acc->header;
+// //            imu_msg->header = (double)cv::getTickCount() / cv::getTickFrequency();
+//             imu_msg->acc = instance->cur_acc->acc;
+//             imu_msg->gyr = instance->gyro_buf[0].gyr +
+//                            (instance->gyro_buf[1].gyr - instance->gyro_buf[0].gyr) *
+//                            (instance->cur_acc->header - instance->gyro_buf[0].header) /
+//                            (instance->gyro_buf[1].header - instance->gyro_buf[0].header);
+//             //printf("imu gyro update %lf %lf %lf\n", instance.gyro_buf[0].header, imu_msg->header, instance.gyro_buf[1].header);
+//             //printf("imu inte update %lf %lf %lf %lf\n", imu_msg->header, instance.gyro_buf[0].gyr.x(), imu_msg->gyr.x(), instance.gyro_buf[1].gyr.x());
+//         }
+//         else {
+//             LOGE("imu error %lf %lf %lf\n", instance->gyro_buf[0].header, instance->cur_acc->header, instance->gyro_buf[1].header);
+//             continue;
+//         }
         
         
-        //TODO: add playback and recording back in
+//         //TODO: add playback and recording back in
         
-//        LOGI("pushing new imu_msg & setting latest_imu_time: %lf \nAcc: %lf %lf %lf \nGyro: %lf %lf %lf", imu_msg->header,
-//             imu_msg->acc[0], imu_msg->acc[1], imu_msg->acc[2],
-//             imu_msg->gyr[0], imu_msg->gyr[1], imu_msg->gyr[2]);
-        instance->latest_imu_time = imu_msg->header;
+// //        LOGI("pushing new imu_msg & setting latest_imu_time: %lf \nAcc: %lf %lf %lf \nGyro: %lf %lf %lf", imu_msg->header,
+// //             imu_msg->acc[0], imu_msg->acc[1], imu_msg->acc[2],
+// //             imu_msg->gyr[0], imu_msg->gyr[1], imu_msg->gyr[2]);
+//         instance->latest_imu_time = imu_msg->header;
 
-        //img_msg callback
-        {
-            IMUMsgLocal imu_msg_local;
-            imu_msg_local.timestamp = imu_msg->header;
-            imu_msg_local.acc = imu_msg->acc;
-            imu_msg_local.gyr = imu_msg->gyr;
+//         //img_msg callback
+//         {
+//             IMUMsgLocal imu_msg_local;
+//             imu_msg_local.timestamp = imu_msg->header;
+//             imu_msg_local.acc = imu_msg->acc;
+//             imu_msg_local.gyr = imu_msg->gyr;
 
-            instance->m_imu_feedback_mutex.lock();
-            instance->local_imu_msg_buf.push(imu_msg_local);
-            instance->m_imu_feedback_mutex.unlock();
-        }
-        instance->m_feature_and_IMU_buffer_mutex.lock();
-        instance->imu_msg_buf.push(imu_msg);
-        //__android_log_print(ANDROID_LOG_INFO, APPNAME, "IMU_buf timestamp %lf, acc_x = %lf",imu_msg_buf.front()->header,imu_msg_buf.front()->acc.x());
-        instance->m_feature_and_IMU_buffer_mutex.unlock();
-        instance->con.notify_one();
-    }
+//             instance->m_imu_feedback_mutex.lock();
+//             instance->local_imu_msg_buf.push(imu_msg_local);
+//             instance->m_imu_feedback_mutex.unlock();
+//         }
+//         instance->m_feature_and_IMU_buffer_mutex.lock();
+//         instance->imu_msg_buf.push(imu_msg);
+//         //__android_log_print(ANDROID_LOG_INFO, APPNAME, "IMU_buf timestamp %lf, acc_x = %lf",imu_msg_buf.front()->header,imu_msg_buf.front()->acc.x());
+//         instance->m_feature_and_IMU_buffer_mutex.unlock();
+//         instance->con.notify_one();
+//     }
 
-    //should return 1 to continue receiving callbacks, or 0 to unregister                                                                                                                           
-    return 1;
+//     //should return 1 to continue receiving callbacks, or 0 to unregister                                                                                                                           
+//     return 1;
 }
 
 void ViewController::saveDataLoop() {
@@ -1082,4 +1084,3 @@ void ViewController::loopButtonPressed(bool isChecked) {
         LOGI("Loop Closure disabled");
     }
 }
-
