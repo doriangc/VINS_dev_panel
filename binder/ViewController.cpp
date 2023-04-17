@@ -103,7 +103,7 @@ void ViewController::processImage(cv::Mat &image, double timestamp, bool isScree
 
         m_imu_feedback_mutex.lock();
         // Get all IMU measurements between last frame and this frame.
-        // featuretracker.imu_msgs = getImuMeasurements(img_metadata->timestamp);
+        featuretracker.imu_msgs = getImuMeasurements(img_metadata->timestamp);
         m_imu_feedback_mutex.unlock();
 
         if (this->saveDir.length() > 0) {
@@ -340,28 +340,34 @@ std::vector<std::pair<std::vector<ImuConstPtr>, ImgConstPtr>> ViewController::ge
     return measurements;
 }
 
-// vector<IMUMsgLocal> ViewController::getImuMeasurements(double header) {
-//     vector<IMUMsgLocal> imu_measurements;
-//     static double last_header = -1; // STATIC only happens once
-//     if (last_header < 0 || local_imu_msg_buf.empty())
-//     {
-//         last_header = header;
-//         return imu_measurements;
-//     }
+// This is called from the processImage function to get all imu measurement
+// for the current "image"
+vector<IMU_MSG_LOCAL> ViewController::getImuMeasurements(double header) {
+    vector<IMU_MSG_LOCAL> imu_measurements;
+    static double last_header = -1; // STATIC only happens once
+    if (last_header < 0 || local_imu_msg_buf.empty())
+    {
+        last_header = header;
+        return imu_measurements;
+    }
 
-//     while (!local_imu_msg_buf.empty() && local_imu_msg_buf.front().timestamp <= last_header)
-//         local_imu_msg_buf.pop();
+    // Remove all measurements that occurred during the last fetch (all timestamps before or during the last timestamp)
+    while (!local_imu_msg_buf.empty() && local_imu_msg_buf.front().header <= last_header)
+        local_imu_msg_buf.pop();
 
-//     while (!local_imu_msg_buf.empty() && local_imu_msg_buf.front().timestamp <= header)
-//     {
-//         imu_measurements.emplace_back(local_imu_msg_buf.front());
-//         local_imu_msg_buf.pop();
-//     }
+    // For any measurements that have happened since the last time and now, add them to the array
+    // we are returning.
+    while (!local_imu_msg_buf.empty() && local_imu_msg_buf.front().header <= header)
+    {
+        imu_measurements.emplace_back(local_imu_msg_buf.front());
+        local_imu_msg_buf.pop(); // Remove from the local buffer
+    }
 
-//     last_header = header;
-//     return imu_measurements;
-// }
+    last_header = header;
+    return imu_measurements;
+}
 
+// Called from the 
 void ViewController::send_imu(const ImuConstPtr &imu_msg) {
     NSTimeInterval t = imu_msg->header;
     if (current_time < 0)
@@ -385,6 +391,7 @@ void ViewController::send_imu(const ImuConstPtr &imu_msg) {
     vins.processIMU(dt, Vector3d(dx, dy, dz), Vector3d(rx, ry, rz));
 }
 
+// This is one of the main threads started on init.
 void ViewController::run() {
     _condition.lock();
 
@@ -402,6 +409,9 @@ void ViewController::process() {
     std::vector<std::pair<std::vector<ImuConstPtr>, ImgConstPtr>> measurements;
     std::unique_lock<std::mutex> lk(m_feature_and_IMU_buffer_mutex);
 
+    // This blocks the thread until the condition in the lambda is true.
+    // Basically, it blocks until there are measurements available.
+    // con.notify_xxx() is used to recheck this condition.
     con.wait(lk, [&] {
         measurements = getMeasurements();
         return !measurements.empty();
@@ -709,6 +719,7 @@ void ViewController::imuStopUpdate() {
 }
 
 void ViewController::imuStartUpdate() const {
+    // This is simulating a device, so no IMU data.
 
     // ASensorManager *sensorManager = ASensorManager_getInstance();
     // assert(sensorManager != NULL);
@@ -760,6 +771,8 @@ int ViewController::process_imu_looper_events(int fd, int events, void *data) {
 }
 
 int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
+    // v This is android-specific stuff and won't run in the simulator.
+
 //     static ASensorEvent accelEvent;
 //     static double accelEventTimestamp = -1.0;
 //     ASensorEvent gyroEvent;
@@ -787,6 +800,7 @@ int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
 //             instance->gyro_buf.push_back(gyro_msg);
 //             continue;
 //         }
+
 //         else if (gyro_msg.header <= instance->gyro_buf[1].header) {
 //             // Apparently events can be fired twice
 //             // Drop this event as it isn't more recent than the last one
@@ -797,11 +811,13 @@ int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
 //             instance->gyro_buf[1] = gyro_msg;
 //         }
         
-//         if(instance->imu_prepare < 10) {
+//         if (instance->imu_prepare < 10) {
 //             instance->imu_prepare++;
 //             continue;
 //         }
-        
+
+//         // We already have a gyro measurement, wait for an accelerometer measurement to
+//         // pair with this gyro measurement.
 //         while (accelEventTimestamp < instance->gyro_buf[0].header) {
 // //            LOGI("accelEventTimestamp < gyroEvent.timestamp: %lf < %lf", accelEventTimestamp , instance->gyro_buf[0].header);
 //             ssize_t numEvents;
@@ -824,6 +840,7 @@ int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
 //                             accelEvent.acceleration.z;
 //             instance->cur_acc = acc_msg;
 //         }
+
 // //        LOGI("waited for accl event: %lf >= %lf", accelEventTimestamp, instance->gyro_buf[0].header);
 //         if(instance->gyro_buf[1].header < accelEventTimestamp){
 //             LOGE("having to wait for fitting gyro event"); // This should not happen if the frequency is the same
@@ -841,6 +858,8 @@ int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
 //             imu_msg->header = instance->cur_acc->header;
 // //            imu_msg->header = (double)cv::getTickCount() / cv::getTickFrequency();
 //             imu_msg->acc = instance->cur_acc->acc;
+
+//             // Gyroscope measurement is interpolated, but accelerometer is not.
 //             imu_msg->gyr = instance->gyro_buf[0].gyr +
 //                            (instance->gyro_buf[1].gyr - instance->gyro_buf[0].gyr) *
 //                            (instance->cur_acc->header - instance->gyro_buf[0].header) /
@@ -861,26 +880,54 @@ int ViewController::process_imu_sensor_events(int fd, int events, void *data) {
 // //             imu_msg->gyr[0], imu_msg->gyr[1], imu_msg->gyr[2]);
 //         instance->latest_imu_time = imu_msg->header;
 
-//         //img_msg callback
-//         {
-//             IMUMsgLocal imu_msg_local;
-//             imu_msg_local.timestamp = imu_msg->header;
-//             imu_msg_local.acc = imu_msg->acc;
-//             imu_msg_local.gyr = imu_msg->gyr;
+        // Bundle IMUMessage into an IMU_MSG_LOCAL to then send off to the ViewController main process.
+    //     {
+    //         IMU_MSG_LOCAL imu_msg_local;
+    //         imu_msg_local.header = imu_msg->header;
+    //         imu_msg_local.acc = imu_msg->acc;
+    //         imu_msg_local.gyr = imu_msg->gyr;
 
-//             instance->m_imu_feedback_mutex.lock();
-//             instance->local_imu_msg_buf.push(imu_msg_local);
-//             instance->m_imu_feedback_mutex.unlock();
-//         }
-//         instance->m_feature_and_IMU_buffer_mutex.lock();
-//         instance->imu_msg_buf.push(imu_msg);
-//         //__android_log_print(ANDROID_LOG_INFO, APPNAME, "IMU_buf timestamp %lf, acc_x = %lf",imu_msg_buf.front()->header,imu_msg_buf.front()->acc.x());
-//         instance->m_feature_and_IMU_buffer_mutex.unlock();
-//         instance->con.notify_one();
-//     }
+    //         instance->m_imu_feedback_mutex.lock();
+    //         instance->local_imu_msg_buf.push(imu_msg_local);
+    //         instance->m_imu_feedback_mutex.unlock();
+    //     }
+    //     instance->m_feature_and_IMU_buffer_mutex.lock();
+    //     instance->imu_msg_buf.push(imu_msg);
+    //     //__android_log_print(ANDROID_LOG_INFO, APPNAME, "IMU_buf timestamp %lf, acc_x = %lf",imu_msg_buf.front()->header,imu_msg_buf.front()->acc.x());
+    //     instance->m_feature_and_IMU_buffer_mutex.unlock();
+    //     instance->con.notify_one();
+    // }
 
-//     //should return 1 to continue receiving callbacks, or 0 to unregister                                                                                                                           
-//     return 1;
+    // //should return 1 to continue receiving callbacks, or 0 to unregister                                                                                                                           
+    // return 1;
+}
+
+// Simulator method
+void ViewController::addMeasurement(IMUMessage imu_msg) {
+    shared_ptr<IMUMessage> imu_msg_ptr(new IMUMessage());
+
+    imu_msg_ptr->header = imu_msg.header;
+    imu_msg_ptr->gyr = imu_msg.gyr;
+    imu_msg_ptr->acc = imu_msg.acc;
+
+    instance->latest_imu_time = imu_msg.header;
+
+    {
+        IMU_MSG_LOCAL imu_msg_local;
+        imu_msg_local.header = imu_msg_ptr->header;
+        imu_msg_local.acc = imu_msg_ptr->acc;
+        imu_msg_local.gyr = imu_msg_ptr->gyr;
+
+        instance->m_imu_feedback_mutex.lock();
+        instance->local_imu_msg_buf.push(imu_msg_local);
+        instance->m_imu_feedback_mutex.unlock();
+    }
+
+    instance->m_feature_and_IMU_buffer_mutex.lock();
+    instance->imu_msg_buf.push(imu_msg_ptr);
+    //__android_log_print(ANDROID_LOG_INFO, APPNAME, "IMU_buf timestamp %lf, acc_x = %lf",imu_msg_buf.front()->header,imu_msg_buf.front()->acc.x());
+    instance->m_feature_and_IMU_buffer_mutex.unlock();
+    instance->con.notify_one();
 }
 
 void ViewController::saveDataLoop() {

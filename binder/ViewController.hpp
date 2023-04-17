@@ -174,7 +174,7 @@ private:
     queue<ImuConstPtr> imu_msg_buf;
 
     // Store the IMU data for motion-only vins
-    // queue<IMUMsgLocal> local_imu_msg_buf;
+    queue<IMU_MSG_LOCAL> local_imu_msg_buf;
 
     // The number of measurements waiting to be processed
     int waiting_lists = 0;
@@ -335,9 +335,11 @@ public:
      * Used for feature tracking, returns and removes all imu_msg from the local imu buffer
      * that are in between the last and the current header (timeStamp)
      */
-    // vector<IMUMsgLocal> getImuMeasurements(double header);
+    vector<IMU_MSG_LOCAL> getImuMeasurements(double header);
 
     void send_imu(const ImuConstPtr &imu_msg);
+
+    void addMeasurement(IMUMessage msg);
 
     //TODO: solve quick fix
     bool mainLoop_isCancelled = false;

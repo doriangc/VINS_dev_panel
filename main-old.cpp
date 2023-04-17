@@ -133,6 +133,7 @@ int main(int, char**)
         ImGui_ImplGlfwGL3_NewFrame();
 
         ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::DockSpaceOverViewport(viewport);
 
         // if (ImGui::BeginMainMenuBar()) {
         //     if (ImGui::BeginMenu("Controls")) {

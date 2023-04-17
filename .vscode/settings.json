@@ -1,4 +1,11 @@
 {
     // "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
-    "cmake.buildCommand": "ninja"
+    "cmake.buildCommand": "ninja",
+    "files.associations": {
+        "chrono": "cpp",
+        "complex": "cpp",
+        "*.ipp": "cpp",
+        "array": "cpp",
+        "string_view": "cpp"
+    }
 }

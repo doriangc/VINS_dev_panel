@@ -7,8 +7,13 @@
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_sdl2.h"
 #include "imgui/backends/imgui_impl_opengl3.h"
+#include "controller.hpp"
+
 #include <stdio.h>
-#include <SDL.h>
+#include <iostream>
+#include <string>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL_opengles2.h>
 #else
@@ -64,7 +69,7 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    SDL_Window* window = SDL_CreateWindow("Dev Panel", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -137,9 +142,27 @@ int main(int, char**)
 	printf("MSAA buffers : %d\n", sampleBuffers);
     printf("-------------------------------------------------------------\n");
 
+    Controller controller;
+
+    controller.loadPath("/home/ubuntu/Downloads/AT04");
+    GLuint my_opengl_texture = controller.stepForwards();
+    
+    
+    // glGenTextures(1, &my_opengl_texture);
+    // glBindTexture(GL_TEXTURE_2D, my_opengl_texture);  
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA, GL_UNSIGNED_BYTE, oBuffer);
+    // glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+    // glGenerateMipmap(GL_TEXTURE_2D);
+
     while (!done)
 #endif
     {
+        my_opengl_texture = controller.stepForwards();
+
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
@@ -160,6 +183,9 @@ int main(int, char**)
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::DockSpaceOverViewport(viewport);
+
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
@@ -169,31 +195,39 @@ int main(int, char**)
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("Controls");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
+            // ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+            // ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+            // ImGui::Checkbox("Another Window", &show_another_window);
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+            // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            // ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
+            // if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+            //     counter++;
+            // ImGui::SameLine();
+            // ImGui::Text("counter = %d", counter);
 
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+            // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }
 
-        // 3. Show another simple window.
-        if (show_another_window)
         {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
+            ImGui::Begin("Viewport");
+            float img_height = ImGui::GetWindowHeight() * 0.95;
+            float img_width = 640.0f*(img_height/480.0f);
+
+            ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - img_width) * 0.5f, (ImGui::GetWindowHeight() - img_height) * 0.5f));
+            ImGui::Image((void*)(intptr_t)my_opengl_texture, ImVec2(img_width, img_height));
+            ImGui::End();
+        }
+
+        {
+            ImGui::Begin("3D View");
+            // float window_height = ImGui::GetWindowHeight();
+            
+            // ImGui::Image((void*)(intptr_t)my_opengl_texture, ImVec2(height*(window_height/width), window_height));
             ImGui::End();
         }
 
