@@ -20,7 +20,9 @@ Controller::Controller() {
 }
 
 Controller::~Controller() {
+    LOGI("Destructing Controller");
     reset();
+    LOGI("Done with free");
 }
 
 void Controller::loadPath(std::string path) {

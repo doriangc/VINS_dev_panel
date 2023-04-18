@@ -11,7 +11,7 @@ set(APP_TARGET dev_panel)
 
 add_subdirectory(imgui)
 include_directories(${PROJECT_SOURCE_DIR})
-add_executable(${APP_TARGET} main.cpp controller.cpp binder/ViewController.cpp gl_tools.cpp imgui/backends/imgui_impl_sdl2.cpp imgui/backends/imgui_impl_opengl3.cpp)
+add_executable(${APP_TARGET} main.cpp controller.cpp binder/ViewController.cpp gl_tools.cpp imgui_setup.cpp imgui/backends/imgui_impl_sdl2.cpp imgui/backends/imgui_impl_opengl3.cpp)
 target_link_libraries(${APP_TARGET} imgui)
 
 # glfw
