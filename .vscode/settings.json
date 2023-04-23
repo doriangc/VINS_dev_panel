@@ -6,6 +6,9 @@
         "complex": "cpp",
         "*.ipp": "cpp",
         "array": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "atomic": "cpp",
+        "condition_variable": "cpp",
+        "map": "cpp"
     }
 }

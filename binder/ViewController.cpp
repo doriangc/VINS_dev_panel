@@ -5,7 +5,7 @@ ViewController* ViewController::instance = nullptr;
 // ASensorEventQueue* ViewController::accelerometerEventQueue = nullptr;
 // ASensorEventQueue* ViewController::gyroscopeEventQueue = nullptr;
 
-bool DETECT_LOOP_CLOSURES = true;
+bool DETECT_LOOP_CLOSURES = false;
 
 ViewController::ViewController() {
     LOGI("ViewController Constructor");
@@ -191,10 +191,20 @@ void ViewController::processImage(cv::Mat &image, double timestamp, bool isScree
             cv::circle(
                 image,
                 good_pts[i],
-                0,
-                cv::Scalar(255 * (1 - track_len[i]), 0, 255 * track_len[i]),
-                7
+                7,
+                // cv::Scalar(255 * (1 - track_len[i]), 0, 255 * track_len[i]),
+                cv::Scalar(255 , 0, 0),
+                -1
             ); //BGR
+
+            cv::circle(
+                image,                 // Image to draw on
+                good_pts[i],                // Center of the circle
+                7,                // Radius of the circle
+                cv::Scalar(0, 0, 255, 255),                 // Color of the circle (e.g. cv::Scalar(0, 0, 255) for red)
+                -1,                    // Negative thickness to draw a filled circle
+                cv::LINE_AA            // Anti-aliased line for smoother circle edge
+            );
         }
 
         if (image_cache_enabled) {

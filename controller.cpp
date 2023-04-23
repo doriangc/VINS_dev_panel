@@ -97,6 +97,7 @@ GLuint Controller::stepForwards() {
             {measurement.xAcc, measurement.yAcc, measurement.zAcc},
             {measurement.xGyr, measurement.yGyr, measurement.zGyr},
         });
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
     cv::Mat rotatedRgba(_frame_height,_frame_width, CV_8UC4, imageFrames[_currentFrame]);
